@@ -44,6 +44,16 @@
         self.firstLabel = [[UILabel alloc] initWithFrame:self.bounds];
         self.secondLabel = [[UILabel alloc] initWithFrame:self.bounds];
 
+        
+        self.firstLabel.font = self.secondLabel.font = self.font;
+        self.firstLabel.textColor = self.secondLabel.textColor = self.textColor;
+        self.firstLabel.shadowColor = self.secondLabel.shadowColor = self.shadowColor;
+        self.firstLabel.shadowOffset = self.secondLabel.shadowOffset = self.shadowOffset;
+        self.firstLabel.textAlignment = self.secondLabel.textAlignment = self.textAlignment;
+        self.firstLabel.autoresizingMask = self.secondLabel.autoresizingMask = self.autoresizingMask;
+        self.firstLabel.text = self.secondLabel.text = @" ";
+        self.backgroundColor = [UIColor clearColor];
+        
         self.transitionRate = 0.3f;
         
         [self addSubview:self.firstLabel];
@@ -85,29 +95,39 @@
 }
 
 - (void)setText:(NSString *)text {
+    if(!text) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         
         [super setText:@""];
         
-        if(self.firstLabel.text.length == 0) {
+        if(((UILabel *)self.firstLabel).text.length == 0) {
             self.firstLabel.text = text;
             self.firstLabel.alpha = 1.0f;
             self.secondLabel.alpha = 0.0f;
         }
         // String is the same, no need to animate.
-        else if([self.firstLabel.text isEqualToString:text] || [self.secondLabel.text isEqualToString:text]) {
+        else if([self.firstLabel.text isEqualToString:text] || [self.secondLabel.text isEqualToString:text] || text.length == 0) {
             return;
         }
         else {
             self.secondLabel.text = text;
             
             [UIView animateWithDuration:self.transitionRate
+                                  delay:0.0f
+                                options:UIViewAnimationOptionBeginFromCurrentState
                              animations:^{
                                  self.firstLabel.alpha = 0.0f;
                                  self.secondLabel.alpha = 1.0f;
                              }
                              completion:^(BOOL finished) {
                                  if(finished) {
+
+                                     // If too many requests come in, this text label can get to 0.
+                                     // Any way of keeping track of animations? Wrap in a queue maybe?
+                                     if(((UILabel *)self.secondLabel).text.length == 0) {
+                                         self.secondLabel.text = text;
+                                     }
+                                     
                                      self.firstLabel.text = self.secondLabel.text;
                                      self.secondLabel.text = @"";
                                      self.firstLabel.alpha = 1.0f;
